@@ -75,13 +75,15 @@ export function selectNextPair(
   }
   if (candidates.length === 0) candidates = active;
 
-  // Weighted selection: lower box = much higher weight
+  // Weighted selection: lower correctStreak = much higher weight
   const weights = candidates.map((p) => {
-    let w = Math.pow(6 - p.box, 2); // box 1→25, box 5→1
+    // Base weight drops exponentially with correctStreak
+    // streak 0 → 64, streak 1 → 16, streak 2 → 4, streak 3 → 1, streak 4+ → 0.25
+    let w = Math.pow(4, Math.max(0, 3 - p.correctStreak));
     const elapsed = Date.now() - p.lastSeen;
     if (elapsed > 60000) w *= 1.5;
     if (p.correctStreak === 0 && p.totalAttempts > 0) w *= 2;
-    return Math.max(w, 0.5);
+    return Math.max(w, 0.25);
   });
 
   const total = weights.reduce((a, b) => a + b, 0);
