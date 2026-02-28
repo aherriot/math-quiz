@@ -235,11 +235,11 @@ export default function QuizScreen({
           ← Base
         </button>
         <div className="flex items-center gap-3">
-          {streak >= 3 && (
+          {/* {streak >= 3 && (
             <span className="text-orange-400 font-bold animate-pulse text-sm">
               🔥 {streak}
             </span>
-          )}
+          )} */}
           <span className="text-yellow-400 text-sm font-medium">
             ⭐ {gameState.totalStars}
           </span>
@@ -347,11 +347,11 @@ export default function QuizScreen({
             <div className="text-yellow-400 text-xl animate-float-up">
               +{starsEarned} ⭐
             </div>
-            {streak >= 3 && (
+            {/* {streak >= 3 && (
               <div className="text-orange-400 text-lg mt-1 font-bold animate-pulse">
                 🔥 {streak} in a row!
               </div>
-            )}
+            )} */}
             <button
               onClick={handleNext}
               className="mt-5 px-10 py-3 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-xl font-bold rounded-xl
