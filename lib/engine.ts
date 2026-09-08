@@ -113,8 +113,6 @@ export function createInitialState(mode: Mode = "add"): GameState {
     mode,
     practiceAll: false,
     totalStars: 0,
-    currentStreak: 0,
-    bestStreak: 0,
     totalAnswered: 0,
   };
 }
@@ -214,14 +212,9 @@ export function processAnswer(
     return u;
   });
 
-  const newStreak = correct ? state.currentStreak + 1 : 0;
-  let starsEarned = 0;
-  if (correct) {
-    starsEarned = 1;
-    if (newStreak >= 10) starsEarned = 5;
-    else if (newStreak >= 5) starsEarned = 3;
-    else if (newStreak >= 3) starsEarned = 2;
-  }
+  // One star per correct answer, flat. There is deliberately no bonus for a run
+  // of right answers: it made getting one wrong feel like losing something.
+  const starsEarned = correct ? 1 : 0;
 
   const newTotalStars = state.totalStars + starsEarned;
   const newLevel = getLevelIndex(newTotalStars);
@@ -231,8 +224,6 @@ export function processAnswer(
       ...state,
       facts: newFacts,
       totalStars: newTotalStars,
-      currentStreak: newStreak,
-      bestStreak: Math.max(state.bestStreak, newStreak),
       totalAnswered: state.totalAnswered + 1,
     },
     correct,

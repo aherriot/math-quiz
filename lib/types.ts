@@ -19,6 +19,11 @@ export interface FactState {
   b: number;
   order: number; // rank within its op, easiest first — drives introduction order
   box: number; // 0=not introduced, 1=learning, 2=reviewing, 3=familiar, 4=known, 5=mastered
+  /**
+   * Consecutive correct answers for this one fact. Purely internal scheduling
+   * input — never shown to the player, and unrelated to any run of right
+   * answers across facts.
+   */
   correctStreak: number;
   totalCorrect: number;
   totalAttempts: number;
@@ -35,8 +40,6 @@ export interface GameState {
    */
   practiceAll: boolean;
   totalStars: number;
-  currentStreak: number;
-  bestStreak: number;
   totalAnswered: number;
 }
 
@@ -83,15 +86,28 @@ export function modeIncludes(mode: Mode, op: Op): boolean {
 
 export type Level = { name: string; minStars: number; emoji: string };
 
+/**
+ * Ranks climb the nested cosmic scale — each one is a bigger place than the
+ * last — so the name alone says which is higher without having to learn the
+ * ladder.
+ */
 export const LEVELS: readonly Level[] = [
-  { name: "Space Cadet", minStars: 0, emoji: "🚀" },
-  { name: "Star Pilot", minStars: 25, emoji: "⭐" },
-  { name: "Moon Walker", minStars: 75, emoji: "🌙" },
-  { name: "Planet Explorer", minStars: 150, emoji: "🪐" },
-  { name: "Comet Chaser", minStars: 300, emoji: "☄️" },
-  { name: "Nebula Navigator", minStars: 500, emoji: "🌌" },
-  { name: "Galaxy Commander", minStars: 800, emoji: "🛸" },
-  { name: "Universe Master", minStars: 1200, emoji: "✨" },
+  { name: "Launch Cadet", minStars: 0, emoji: "🚀" },
+  { name: "Sky Pilot", minStars: 10, emoji: "☁️" },
+  { name: "Orbit Scout", minStars: 25, emoji: "🛰️" },
+  { name: "Moon Walker", minStars: 45, emoji: "🌙" },
+  { name: "Planet Explorer", minStars: 75, emoji: "🪐" },
+  { name: "Comet Chaser", minStars: 115, emoji: "☄️" },
+  { name: "Star Captain", minStars: 165, emoji: "⭐" },
+  { name: "Solar Guardian", minStars: 230, emoji: "☀️" },
+  { name: "Nebula Navigator", minStars: 320, emoji: "🌌" },
+  { name: "Cluster Chief", minStars: 440, emoji: "✨" },
+  { name: "Galaxy Commander", minStars: 600, emoji: "🛸" },
+  { name: "Supercluster Admiral", minStars: 820, emoji: "🌠" },
+  { name: "Universe Master", minStars: 1120, emoji: "💫" },
+  { name: "Multiverse Monarch", minStars: 1550, emoji: "🌀" },
+  { name: "Cosmic Sovereign", minStars: 2200, emoji: "👑" },
+  { name: "Infinity Legend", minStars: 3200, emoji: "♾️" },
 ];
 
 export function getLevel(stars: number): Level {

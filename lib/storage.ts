@@ -16,6 +16,9 @@ interface LegacyPair {
 interface StoredState extends Partial<GameState> {
   /** v1 saves predated the other operations and stored multiplication facts only. */
   pairs?: LegacyPair[];
+  /** Dropped: runs of right answers across facts no longer earn or track anything. */
+  currentStreak?: number;
+  bestStreak?: number;
 }
 
 const VALID_MODES: Mode[] = Object.keys(MODE_OPS) as Mode[];
@@ -57,22 +60,26 @@ export function loadGameState(): GameState | null {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
-    const { pairs, facts, mode, ...rest } = JSON.parse(raw) as StoredState;
+    const { pairs, facts, mode, totalStars, totalAnswered, practiceAll } =
+      JSON.parse(raw) as StoredState;
 
     const savedFacts: FactState[] =
       facts ?? (pairs ?? []).map((p) => ({ ...p, op: "mul" as Op, order: 0 }));
 
     const base = createInitialState();
+    // Built field by field rather than spread, so fields dropped from GameState
+    // (the old currentStreak / bestStreak) can't ride along and be re-persisted.
     return {
-      ...base,
-      ...rest,
       facts: hydrateFacts(savedFacts),
-      practiceAll: rest.practiceAll === true,
-      mode: mode && VALID_MODES.includes(mode)
-        ? mode
-        : pairs
-          ? "mul" // an existing player was part-way through the times tables
-          : base.mode,
+      totalStars: totalStars ?? base.totalStars,
+      totalAnswered: totalAnswered ?? base.totalAnswered,
+      practiceAll: practiceAll === true,
+      mode:
+        mode && VALID_MODES.includes(mode)
+          ? mode
+          : pairs
+            ? "mul" // an existing player was part-way through the times tables
+            : base.mode,
     };
   } catch {
     return null;

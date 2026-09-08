@@ -1,6 +1,14 @@
 "use client";
 
-import { GameState, MODES, Mode, getLevel, getNextLevel } from "@/lib/types";
+import {
+  GameState,
+  LEVELS,
+  MODES,
+  Mode,
+  getLevel,
+  getLevelIndex,
+  getNextLevel,
+} from "@/lib/types";
 import { factsInMode } from "@/lib/engine";
 
 interface Props {
@@ -19,6 +27,7 @@ export default function HomeScreen({
   onTogglePracticeAll,
 }: Props) {
   const level = getLevel(gameState.totalStars);
+  const levelIndex = getLevelIndex(gameState.totalStars);
   const nextLevel = getNextLevel(gameState.totalStars);
 
   const pool = factsInMode(gameState);
@@ -111,7 +120,21 @@ export default function HomeScreen({
           <div className="text-2xl text-white font-bold text-center">
             {level.emoji} {level.name}
           </div>
-          <div className="text-yellow-400 text-lg text-center mt-1">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-white/40 text-center mt-0.5">
+            Rank {levelIndex + 1} of {LEVELS.length}
+          </div>
+          {/* One pip per rank, filled up to the one reached */}
+          <div className="mt-2 flex justify-center gap-1">
+            {LEVELS.map((l, i) => (
+              <span
+                key={l.name}
+                className={`w-1.5 h-1.5 rounded-full ${
+                  i <= levelIndex ? "bg-amber-400" : "bg-white/15"
+                }`}
+              />
+            ))}
+          </div>
+          <div className="text-yellow-400 text-lg text-center mt-2">
             ⭐ {gameState.totalStars} stars
           </div>
         </div>
@@ -148,12 +171,6 @@ export default function HomeScreen({
         <div className="text-center">
           <div className="text-2xl font-bold text-amber-400">{total}</div>
           <div className="text-xs uppercase tracking-wide">Total</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-orange-400">
-            {gameState.bestStreak}
-          </div>
-          <div className="text-xs uppercase tracking-wide">Best Streak</div>
         </div>
       </div>
 

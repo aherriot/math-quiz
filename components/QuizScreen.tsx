@@ -4,10 +4,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   GameState,
   FactState,
+  LEVELS,
   MODES,
   OP_SYMBOL,
   answerOf,
   getLevel,
+  getLevelIndex,
   isCommutative,
 } from "@/lib/types";
 import { selectNextFact, processAnswer } from "@/lib/engine";
@@ -54,6 +56,7 @@ export default function QuizScreen({
   const [encouragement, setEncouragement] = useState("");
   const [newLevelName, setNewLevelName] = useState("");
   const [newLevelEmoji, setNewLevelEmoji] = useState("");
+  const [newLevelRank, setNewLevelRank] = useState(0);
   const [animKey, setAnimKey] = useState(0); // force re-trigger animations
   const [starBursts, setStarBursts] = useState<
     {
@@ -124,6 +127,7 @@ export default function QuizScreen({
         const newLevel = getLevel(result.newState.totalStars);
         setNewLevelName(newLevel.name);
         setNewLevelEmoji(newLevel.emoji);
+        setNewLevelRank(getLevelIndex(result.newState.totalStars) + 1);
         setPhase("levelup");
       } else {
         setPhase("correct");
@@ -207,7 +211,6 @@ export default function QuizScreen({
 
   const correctAnswer = answerOf(currentFact);
   const symbol = OP_SYMBOL[currentFact.op];
-  const streak = gameState.currentStreak;
 
   const numpadColors = [
     "from-pink-500/30 to-pink-600/30 border-pink-400/30",
@@ -254,11 +257,6 @@ export default function QuizScreen({
           <span className="text-white/40 text-sm">
             {MODES.find((m) => m.mode === gameState.mode)?.label}
           </span>
-          {/* {streak >= 3 && (
-            <span className="text-orange-400 font-bold animate-pulse text-sm">
-              🔥 {streak}
-            </span>
-          )} */}
           <span className="text-yellow-400 text-sm font-medium">
             ⭐ {gameState.totalStars}
           </span>
@@ -366,11 +364,6 @@ export default function QuizScreen({
             <div className="text-yellow-400 text-xl animate-float-up">
               +{starsEarned} ⭐
             </div>
-            {/* {streak >= 3 && (
-              <div className="text-orange-400 text-lg mt-1 font-bold animate-pulse">
-                🔥 {streak} in a row!
-              </div>
-            )} */}
             <button
               onClick={handleNext}
               className="mt-5 px-10 py-3 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-xl font-bold rounded-xl
@@ -417,6 +410,9 @@ export default function QuizScreen({
               <div className="text-white/60 text-sm mb-1">You are now a</div>
               <div className="text-3xl md:text-4xl font-bold text-white">
                 {newLevelEmoji} {newLevelName}
+              </div>
+              <div className="text-[11px] uppercase tracking-[0.2em] text-white/50 mt-1">
+                Rank {newLevelRank} of {LEVELS.length}
               </div>
             </div>
             <div className="text-yellow-400 text-xl">
