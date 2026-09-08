@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { GameState, Screen } from "@/lib/types";
+import { GameState, Mode, Screen } from "@/lib/types";
 import { loadGameState, saveGameState, clearGameState } from "@/lib/storage";
 import { createInitialState } from "@/lib/engine";
 import Stars from "@/components/Stars";
@@ -30,8 +30,18 @@ export default function Home() {
 
   const handleReset = useCallback(() => {
     clearGameState();
-    setGameState(createInitialState());
+    setGameState((prev) => createInitialState(prev?.mode));
     setScreen("home");
+  }, []);
+
+  const handleSelectMode = useCallback((mode: Mode) => {
+    setGameState((prev) => (prev ? { ...prev, mode } : prev));
+  }, []);
+
+  const handleTogglePracticeAll = useCallback(() => {
+    setGameState((prev) =>
+      prev ? { ...prev, practiceAll: !prev.practiceAll } : prev,
+    );
   }, []);
 
   if (!loaded || !gameState) {
@@ -54,6 +64,8 @@ export default function Home() {
           gameState={gameState}
           onPlay={() => setScreen("quiz")}
           onProgress={() => setScreen("progress")}
+          onSelectMode={handleSelectMode}
+          onTogglePracticeAll={handleTogglePracticeAll}
         />
       )}
       {screen === "quiz" && (

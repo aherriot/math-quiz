@@ -9,9 +9,9 @@ const fredoka = Fredoka({
 });
 
 export const metadata: Metadata = {
-  title: "Multiplication Galaxy – Learn Times Tables!",
+  title: "Math Galaxy – Learn Your Math Facts!",
   description:
-    "A fun space-themed game to help kids memorize multiplication tables up to 12×12 using spaced repetition.",
+    "A fun space-themed game to help kids memorize their addition, subtraction and multiplication facts using spaced repetition.",
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>",
   },
