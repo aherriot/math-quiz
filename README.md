@@ -1,5 +1,7 @@
 # Math Galaxy
 
+**▶ Play it: https://math-quiz-fun.vercel.app**
+
 A space-themed math drill for kids. It teaches the arithmetic facts that have to
 be memorised rather than worked out — the ones that make longer problems fast —
 using spaced repetition, and wraps the practice in stars and rank-ups so it
@@ -43,18 +45,30 @@ Each fact sits in one of six Leitner-style boxes, from *not introduced* through
 it straight back to *learning*.
 
 Which fact comes next is a weighted random draw. Weight falls off sharply with
-the current correct-streak — a fact answered right three times running is about
-64× less likely to appear than one at zero — with a boost for anything not seen
-in a minute, and a further boost for a fact that has been attempted and missed.
-The immediately preceding fact is excluded so nothing repeats back to back.
+how many times that one fact has been answered right in a row — three running
+makes it about 64× less likely to appear than a fact at zero — with a boost for
+anything not seen in a minute, and a further boost for a fact that has been
+attempted and missed. The immediately preceding fact is excluded so nothing
+repeats back to back. This per-fact counter is scheduling input only and is
+never shown.
 
 New facts are introduced one at a time, and only once nothing is currently being
 struggled with, so the active set stays small enough to actually learn.
 
-Correct answers earn stars, worth more on a streak (1 → 2 at three in a row →
-3 at five → 5 at ten). Stars accumulate into eight ranks, Space Cadet through
-Universe Master. The running streak count is deliberately hidden from the
-player: seeing it climb made getting one wrong feel like a loss.
+Every correct answer earns exactly one star. There is deliberately no bonus for
+a run of right answers, and no run is tracked or displayed: watching a streak
+climb made getting one wrong feel like losing something, which is the opposite
+of what a practice app should do. A wrong answer simply earns nothing.
+
+Stars accumulate into sixteen ranks, from Launch Cadet to Infinity Legend. The
+names climb the nested cosmic scale — launch, sky, orbit, moon, planet, comet,
+star, solar, nebula, cluster, galaxy, supercluster, universe, multiverse, cosmic,
+infinity — so which rank outranks which is legible without learning the ladder,
+and the home screen shows the rank number and a pip per rank alongside it.
+Thresholds run 0, 10, 25, 45, 75, 115, 165, 230, 320, 440, 600, 820, 1120, 1550,
+2200, 3200; since a star is one correct answer, those read directly as question
+counts. The last promotion lands at roughly four fifths of the way to mastering
+all 393 facts.
 
 The **Progress Map** has a grid per family, colour-coded by box. Division's grid
 is the times-table shape with rows as the quotient and columns as the divisor,
@@ -91,4 +105,6 @@ key, so adding facts or a whole new family never invalidates a player's
 progress.
 
 Built with Next.js 16, React 19, TypeScript and Tailwind 4. The single route is
-statically prerendered, and it deploys to Vercel (see `vercel.json`).
+statically prerendered, and it deploys to Vercel at
+[math-quiz-fun.vercel.app](https://math-quiz-fun.vercel.app) (see
+`vercel.json`).
