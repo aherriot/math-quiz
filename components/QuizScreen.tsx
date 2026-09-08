@@ -1,8 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { GameState, PairState, getLevel } from "@/lib/types";
-import { selectNextPair, processAnswer } from "@/lib/engine";
+import {
+  GameState,
+  FactState,
+  MODES,
+  OP_SYMBOL,
+  answerOf,
+  getLevel,
+  isCommutative,
+} from "@/lib/types";
+import { selectNextFact, processAnswer } from "@/lib/engine";
 
 interface Props {
   gameState: GameState;
@@ -37,7 +45,7 @@ export default function QuizScreen({
   onBack,
 }: Props) {
   const [phase, setPhase] = useState<Phase>("asking");
-  const [currentPair, setCurrentPair] = useState<PairState | null>(null);
+  const [currentFact, setCurrentFact] = useState<FactState | null>(null);
 
   const [answer, setAnswer] = useState("");
   const [starsEarned, setStarsEarned] = useState(0);
@@ -58,23 +66,25 @@ export default function QuizScreen({
     }[]
   >([]);
 
-  const lastPairRef = useRef<{ a: number; b: number } | undefined>(undefined);
+  const lastFactRef = useRef<FactState | undefined>(undefined);
   const initializedRef = useRef(false);
 
   const pickNext = useCallback((state: GameState) => {
-    const { pair, isNew: isNewPair } = selectNextPair(
+    const { fact, isNew: isNewFact } = selectNextFact(
       state,
-      lastPairRef.current,
+      lastFactRef.current,
     );
-    setCurrentPair(pair);
+    setCurrentFact(fact);
     setAnswer("");
     setAnimKey((k) => k + 1);
 
-    const flip = pair.a !== pair.b && Math.random() > 0.5;
-    setDisplayA(flip ? pair.b : pair.a);
-    setDisplayB(flip ? pair.a : pair.b);
+    // Only the commutative ops can be shown either way round — 15 - 9 is not 9 - 15.
+    const flip =
+      isCommutative(fact.op) && fact.a !== fact.b && Math.random() > 0.5;
+    setDisplayA(flip ? fact.b : fact.a);
+    setDisplayB(flip ? fact.a : fact.b);
 
-    setPhase(isNewPair ? "introducing" : "asking");
+    setPhase(isNewFact ? "introducing" : "asking");
   }, []);
 
   useEffect(() => {
@@ -85,12 +95,12 @@ export default function QuizScreen({
   }, [gameState, pickNext]);
 
   const handleSubmit = useCallback(() => {
-    if (!currentPair || !answer) return;
+    if (!currentFact || !answer) return;
     const numAnswer = parseInt(answer, 10);
     if (isNaN(numAnswer)) return;
 
-    const result = processAnswer(gameState, currentPair, numAnswer);
-    lastPairRef.current = { a: currentPair.a, b: currentPair.b };
+    const result = processAnswer(gameState, currentFact, numAnswer);
+    lastFactRef.current = currentFact;
 
     if (result.correct) {
       setStarsEarned(result.starsEarned);
@@ -128,24 +138,29 @@ export default function QuizScreen({
     }
 
     onUpdateState(result.newState);
-  }, [gameState, currentPair, answer, onUpdateState]);
+  }, [gameState, currentFact, answer, onUpdateState]);
 
   const handleNext = useCallback(() => {
     pickNext(gameState);
   }, [gameState, pickNext]);
 
   const handleIntroduced = useCallback(() => {
-    if (currentPair) {
-      const newPairs = gameState.pairs.map((p) => {
-        if (p.a === currentPair.a && p.b === currentPair.b && p.box === 0) {
-          return { ...p, box: 1 };
+    if (currentFact) {
+      const newFacts = gameState.facts.map((f) => {
+        if (
+          f.op === currentFact.op &&
+          f.a === currentFact.a &&
+          f.b === currentFact.b &&
+          f.box === 0
+        ) {
+          return { ...f, box: 1 };
         }
-        return p;
+        return f;
       });
-      onUpdateState({ ...gameState, pairs: newPairs });
+      onUpdateState({ ...gameState, facts: newFacts });
     }
     setPhase("asking");
-  }, [gameState, currentPair, onUpdateState]);
+  }, [gameState, currentFact, onUpdateState]);
 
   // Keyboard support — placed after handler definitions
   useEffect(() => {
@@ -188,9 +203,10 @@ export default function QuizScreen({
     }
   };
 
-  if (!currentPair) return null;
+  if (!currentFact) return null;
 
-  const correctAnswer = currentPair.a * currentPair.b;
+  const correctAnswer = answerOf(currentFact);
+  const symbol = OP_SYMBOL[currentFact.op];
   const streak = gameState.currentStreak;
 
   const numpadColors = [
@@ -235,6 +251,9 @@ export default function QuizScreen({
           ← Base
         </button>
         <div className="flex items-center gap-3">
+          <span className="text-white/40 text-sm">
+            {MODES.find((m) => m.mode === gameState.mode)?.label}
+          </span>
           {/* {streak >= 3 && (
             <span className="text-orange-400 font-bold animate-pulse text-sm">
               🔥 {streak}
@@ -258,7 +277,7 @@ export default function QuizScreen({
             </div>
             <div className="bg-white/10 rounded-3xl p-8 backdrop-blur-md border border-white/20 shadow-xl shadow-fuchsia-500/10">
               <div className="text-5xl md:text-6xl font-bold text-white leading-tight">
-                {displayA} × {displayB}
+                {displayA} {symbol} {displayB}
               </div>
               <div className="text-5xl md:text-6xl font-bold text-amber-400 mt-2">
                 = {correctAnswer}
@@ -282,7 +301,7 @@ export default function QuizScreen({
           <div className="text-center w-full animate-fade-in">
             {/* Question */}
             <div className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight">
-              {displayA} × {displayB} ={" "}
+              {displayA} {symbol} {displayB} ={" "}
               <span className="text-fuchsia-400">?</span>
             </div>
 
@@ -342,7 +361,7 @@ export default function QuizScreen({
               {encouragement}
             </div>
             <div className="text-2xl text-white/90 mb-2">
-              {displayA} × {displayB} = {correctAnswer}
+              {displayA} {symbol} {displayB} = {correctAnswer}
             </div>
             <div className="text-yellow-400 text-xl animate-float-up">
               +{starsEarned} ⭐
@@ -372,7 +391,7 @@ export default function QuizScreen({
             <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-md border border-white/20 mb-3 shadow-xl">
               <div className="text-white/60 text-base mb-2">The answer is:</div>
               <div className="text-4xl md:text-5xl font-bold text-white">
-                {displayA} × {displayB} ={" "}
+                {displayA} {symbol} {displayB} ={" "}
                 <span className="text-amber-400">{correctAnswer}</span>
               </div>
             </div>

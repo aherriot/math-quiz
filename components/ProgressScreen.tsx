@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { GameState } from "@/lib/types";
-import { getPairMastery } from "@/lib/engine";
+import { Fragment, useState } from "react";
+import { GameState, MODE_OPS, OP_SYMBOL, Op, answerOf } from "@/lib/types";
+import { getFactMastery } from "@/lib/engine";
 
 interface Props {
   gameState: GameState;
@@ -28,26 +28,97 @@ const BOX_LABELS: Record<number, string> = {
   5: "Mastered ⭐",
 };
 
+const OP_TABS: { op: Op; label: string }[] = [
+  { op: "add", label: "➕" },
+  { op: "sub", label: "➖" },
+  { op: "mul", label: "✖️" },
+  { op: "div", label: "➗" },
+];
+
+interface Grid {
+  rows: number[];
+  cols: number[];
+  width: number;
+  /** The fact a cell stands for, or null where the operation has no such fact. */
+  operands: (row: number, col: number) => { a: number; b: number } | null;
+  /** The number printed in the cell — the answer, except for division. */
+  cellText: (row: number, col: number) => number;
+  caption?: string;
+}
+
+/** Grid layout per operation: rows are the left operand, columns the right one. */
+const GRIDS: Record<Op, Grid> = {
+  add: {
+    rows: range(1, 9),
+    cols: range(1, 9),
+    width: 380,
+    operands: (a, b) => ({ a, b }),
+    cellText: (a, b) => a + b,
+  },
+  sub: {
+    rows: range(1, 18),
+    cols: range(1, 9),
+    width: 340,
+    // Subtraction only defines a cell when the result isn't negative.
+    operands: (a, b) => (b > a ? null : { a, b }),
+    cellText: (a, b) => a - b,
+  },
+  mul: {
+    rows: range(1, 12),
+    cols: range(1, 12),
+    width: 420,
+    operands: (a, b) => ({ a, b }),
+    cellText: (a, b) => a * b,
+  },
+  div: {
+    // Rows are the quotient and columns the divisor, so the cell holds the
+    // dividend — the times-table grid read backwards.
+    rows: range(1, 12),
+    cols: range(1, 12),
+    width: 420,
+    operands: (quotient, divisor) => ({ a: quotient * divisor, b: divisor }),
+    cellText: (quotient, divisor) => quotient * divisor,
+    caption: "cell ÷ column = row",
+  },
+};
+
+function range(from: number, to: number): number[] {
+  return Array.from({ length: to - from + 1 }, (_, i) => from + i);
+}
+
 export default function ProgressScreen({ gameState, onBack, onReset }: Props) {
   const [confirmReset, setConfirmReset] = useState(false);
+  // Open on the first operation of whatever mode the player was last using.
+  const [op, setOp] = useState<Op>(MODE_OPS[gameState.mode][0]);
   const [selectedCell, setSelectedCell] = useState<{
     a: number;
     b: number;
   } | null>(null);
 
-  const mastered = gameState.pairs.filter((p) => p.box >= 5).length;
-  const introduced = gameState.pairs.filter((p) => p.box > 0).length;
-  const total = gameState.pairs.length;
-  const masteryPercent = Math.round((mastered / total) * 100);
+  const facts = gameState.facts.filter((f) => f.op === op);
+  const mastered = facts.filter((f) => f.box >= 5).length;
+  const introduced = facts.filter((f) => f.box > 0).length;
+  const masteryPercent = Math.round((mastered / facts.length) * 100);
 
-  const selectedPair = selectedCell
-    ? getPairMastery(selectedCell.a, selectedCell.b, gameState.pairs)
+  const symbol = OP_SYMBOL[op];
+  const { rows, cols, width, operands, cellText, caption } = GRIDS[op];
+
+  const selectedOperands = selectedCell
+    ? operands(selectedCell.a, selectedCell.b)
     : null;
+  const selectedFact = selectedOperands
+    ? getFactMastery(op, selectedOperands.a, selectedOperands.b, gameState.facts)
+    : null;
+
+  const selectMode = (next: Op) => {
+    setOp(next);
+    setSelectedCell(null);
+  };
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center p-4 relative z-10">
       {/* Top bar */}
-      <div className="w-full max-w-lg flex justify-between items-center mb-4">
+      <div className="w-full max-w-lg flex justify-between items-center mb-3">
         <button
           onClick={onBack}
           className="text-white/60 hover:text-white text-base transition-colors cursor-pointer px-2 py-1"
@@ -56,6 +127,25 @@ export default function ProgressScreen({ gameState, onBack, onReset }: Props) {
         </button>
         <h2 className="text-xl font-bold text-white">📊 Progress Map</h2>
         <div className="w-16" />
+      </div>
+
+      {/* Operation tabs */}
+      <div className="flex gap-2 mb-3">
+        {OP_TABS.map((t) => (
+          <button
+            key={t.op}
+            onClick={() => selectMode(t.op)}
+            aria-pressed={op === t.op}
+            className={`px-5 py-2 rounded-xl text-lg font-bold border transition-all duration-200 cursor-pointer
+              ${
+                op === t.op
+                  ? "bg-gradient-to-b from-violet-500/40 to-fuchsia-500/30 border-fuchsia-400/60 text-white"
+                  : "bg-white/5 border-white/15 text-white/60 hover:bg-white/10"
+              }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {/* Summary */}
@@ -89,91 +179,92 @@ export default function ProgressScreen({ gameState, onBack, onReset }: Props) {
         </div>
       </div>
 
-      {/* Multiplication grid */}
+      {/* Fact grid */}
+      {caption && (
+        <div className="text-white/40 text-xs mb-2">{caption}</div>
+      )}
       <div className="w-full max-w-lg overflow-x-auto">
         <div
           className="grid gap-[3px] mx-auto"
           style={{
-            gridTemplateColumns: `32px repeat(12, 1fr)`,
-            maxWidth: 420,
+            gridTemplateColumns: `32px repeat(${cols.length}, 1fr)`,
+            maxWidth: width,
           }}
         >
           {/* Header row */}
           <div className="text-white/40 text-xs font-bold flex items-center justify-center">
-            ×
+            {symbol}
           </div>
-          {Array.from({ length: 12 }, (_, i) => (
+          {cols.map((b) => (
             <div
-              key={`h-${i}`}
+              key={`h-${b}`}
               className="text-white/60 text-xs font-bold flex items-center justify-center h-7"
             >
-              {i + 1}
+              {b}
             </div>
           ))}
 
           {/* Grid rows */}
-          {Array.from({ length: 12 }, (_, row) => (
-            <>
-              {/* Row header */}
-              <div
-                key={`r-${row}`}
-                className="text-white/60 text-xs font-bold flex items-center justify-center w-8"
-              >
-                {row + 1}
+          {rows.map((a) => (
+            <Fragment key={`r-${a}`}>
+              <div className="text-white/60 text-xs font-bold flex items-center justify-center w-8">
+                {a}
               </div>
-              {/* Cells */}
-              {Array.from({ length: 12 }, (_, col) => {
-                const a = row + 1;
-                const b = col + 1;
-                const pair = getPairMastery(a, b, gameState.pairs);
-                const box = pair?.box ?? 0;
+              {cols.map((b) => {
+                const ops = operands(a, b);
+                if (!ops) {
+                  return <div key={`c-${a}-${b}`} className="aspect-square" />;
+                }
+                const fact = getFactMastery(op, ops.a, ops.b, gameState.facts);
+                const box = fact?.box ?? 0;
                 const isSelected =
                   selectedCell?.a === a && selectedCell?.b === b;
+                const result = cellText(a, b);
 
                 return (
                   <button
-                    key={`c-${row}-${col}`}
+                    key={`c-${a}-${b}`}
                     onClick={() => setSelectedCell({ a, b })}
                     className={`aspect-square rounded-sm border text-[10px] font-medium flex items-center justify-center
                       transition-all duration-200 cursor-pointer
                       ${BOX_COLORS[box]}
                       ${isSelected ? "ring-2 ring-white scale-110 z-10" : "hover:scale-105"}
                     `}
-                    title={`${a} × ${b} = ${a * b}`}
+                    title={`${ops.a} ${symbol} ${ops.b} = ${answerOf({ op, ...ops })}`}
                   >
-                    <span className="text-white/70">{a * b}</span>
+                    <span className="text-white/70">{result}</span>
                   </button>
                 );
               })}
-            </>
+            </Fragment>
           ))}
         </div>
       </div>
 
       {/* Selected cell detail */}
-      {selectedPair && selectedCell && (
+      {selectedFact && selectedCell && (
         <div className="mt-4 bg-white/10 backdrop-blur-md rounded-xl px-5 py-3 border border-white/20 w-full max-w-lg animate-fade-in">
           <div className="flex justify-between items-center">
             <div>
               <div className="text-xl font-bold text-white">
-                {selectedCell.a} × {selectedCell.b} ={" "}
-                {selectedCell.a * selectedCell.b}
+                {selectedOperands!.a} {symbol} {selectedOperands!.b} ={" "}
+                {answerOf({ op, ...selectedOperands! })}
               </div>
               <div
-                className={`text-sm mt-1 ${selectedPair.box >= 5 ? "text-emerald-400" : selectedPair.box >= 3 ? "text-yellow-400" : selectedPair.box > 0 ? "text-rose-400" : "text-white/40"}`}
+                className={`text-sm mt-1 ${selectedFact.box >= 5 ? "text-emerald-400" : selectedFact.box >= 3 ? "text-yellow-400" : selectedFact.box > 0 ? "text-rose-400" : "text-white/40"}`}
               >
-                {BOX_LABELS[selectedPair.box]}
+                {BOX_LABELS[selectedFact.box]}
               </div>
             </div>
-            {selectedPair.totalAttempts > 0 && (
+            {selectedFact.totalAttempts > 0 && (
               <div className="text-right">
                 <div className="text-white/80 text-sm">
-                  {selectedPair.totalCorrect}/{selectedPair.totalAttempts}{" "}
+                  {selectedFact.totalCorrect}/{selectedFact.totalAttempts}{" "}
                   correct
                 </div>
                 <div className="text-white/50 text-xs">
                   {Math.round(
-                    (selectedPair.totalCorrect / selectedPair.totalAttempts) *
+                    (selectedFact.totalCorrect / selectedFact.totalAttempts) *
                       100,
                   )}
                   % accuracy

@@ -1,19 +1,30 @@
 "use client";
 
-import { GameState, getLevel, getNextLevel } from "@/lib/types";
+import { GameState, MODES, Mode, getLevel, getNextLevel } from "@/lib/types";
+import { factsInMode } from "@/lib/engine";
 
 interface Props {
   gameState: GameState;
   onPlay: () => void;
   onProgress: () => void;
+  onSelectMode: (mode: Mode) => void;
+  onTogglePracticeAll: () => void;
 }
 
-export default function HomeScreen({ gameState, onPlay, onProgress }: Props) {
+export default function HomeScreen({
+  gameState,
+  onPlay,
+  onProgress,
+  onSelectMode,
+  onTogglePracticeAll,
+}: Props) {
   const level = getLevel(gameState.totalStars);
   const nextLevel = getNextLevel(gameState.totalStars);
-  const mastered = gameState.pairs.filter((p) => p.box >= 5).length;
-  const introduced = gameState.pairs.filter((p) => p.box > 0).length;
-  const total = gameState.pairs.length;
+
+  const pool = factsInMode(gameState);
+  const mastered = pool.filter((f) => f.box >= 5).length;
+  const introduced = pool.filter((f) => f.box > 0).length;
+  const total = pool.length;
 
   const progressToNext = nextLevel
     ? ((gameState.totalStars - level.minStars) /
@@ -24,18 +35,75 @@ export default function HomeScreen({ gameState, onPlay, onProgress }: Props) {
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center p-6 relative z-10">
       {/* Rocket */}
-      <div className="text-8xl animate-float mb-2 select-none">🚀</div>
+      <div className="text-7xl animate-float mb-2 select-none">🚀</div>
 
       {/* Title */}
       <h1 className="text-4xl md:text-6xl font-bold text-center mb-1 leading-tight">
         <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-300 bg-clip-text text-transparent">
-          Multiplication
+          Math
         </span>
         <br />
         <span className="bg-gradient-to-r from-amber-300 via-pink-400 to-violet-400 bg-clip-text text-transparent">
           Galaxy
         </span>
       </h1>
+
+      {/* Mode picker */}
+      <div className="mt-5 grid grid-cols-3 gap-2 w-full max-w-sm">
+        {MODES.map((m) => {
+          const selected = gameState.mode === m.mode;
+          return (
+            <button
+              key={m.mode}
+              onClick={() => onSelectMode(m.mode)}
+              aria-pressed={selected}
+              className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border transition-all duration-200 cursor-pointer
+                ${m.mode === "mixed" ? "col-span-3" : ""}
+                ${
+                  selected
+                    ? "bg-gradient-to-b from-violet-500/40 to-fuchsia-500/30 border-fuchsia-400/60 scale-105 shadow-lg shadow-fuchsia-500/20"
+                    : "bg-white/5 border-white/15 hover:bg-white/10"
+                }`}
+            >
+              <span className="text-xl leading-none">{m.emoji}</span>
+              <span
+                className={`text-xs font-bold ${selected ? "text-white" : "text-white/60"}`}
+              >
+                {m.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Already-know-them-all switch */}
+      <button
+        onClick={onTogglePracticeAll}
+        role="switch"
+        aria-checked={gameState.practiceAll}
+        className="mt-3 w-full max-w-sm flex items-center gap-3 px-4 py-2.5 rounded-xl border border-white/15
+          bg-white/5 hover:bg-white/10 transition-all duration-200 cursor-pointer text-left"
+      >
+        <span
+          className={`shrink-0 w-11 h-6 rounded-full p-0.5 transition-colors duration-200
+            ${gameState.practiceAll ? "bg-emerald-500" : "bg-white/20"}`}
+        >
+          <span
+            className={`block w-5 h-5 rounded-full bg-white transition-transform duration-200
+              ${gameState.practiceAll ? "translate-x-5" : ""}`}
+          />
+        </span>
+        <span>
+          <span className="block text-sm font-bold text-white">
+            I already know these
+          </span>
+          <span className="block text-xs text-white/50">
+            {gameState.practiceAll
+              ? "Every fact is fair game — no new-fact cards"
+              : "Teach me new facts one at a time"}
+          </span>
+        </span>
+      </button>
 
       {/* Level badge */}
       <div className="mt-5 flex flex-col items-center">
@@ -65,7 +133,7 @@ export default function HomeScreen({ gameState, onPlay, onProgress }: Props) {
         )}
       </div>
 
-      {/* Stats row */}
+      {/* Stats row — scoped to the selected mode */}
       <div className="flex gap-6 mt-6 text-white/80">
         <div className="text-center">
           <div className="text-2xl font-bold text-emerald-400">{mastered}</div>
@@ -92,7 +160,7 @@ export default function HomeScreen({ gameState, onPlay, onProgress }: Props) {
       {/* Play button */}
       <button
         onClick={onPlay}
-        className="mt-8 px-14 py-4 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-2xl font-bold rounded-2xl
+        className="mt-7 px-14 py-4 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-2xl font-bold rounded-2xl
           shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/50 hover:scale-105
           active:scale-95 transition-all duration-200 cursor-pointer"
       >
