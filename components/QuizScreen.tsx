@@ -271,7 +271,7 @@ export default function QuizScreen({
         {phase === "introducing" && (
           <div className="text-center animate-bounce-in">
             <div className="text-lg text-fuchsia-400 font-bold mb-3 animate-pulse">
-              ✨ New Fact! ✨
+              ✨ New Question! ✨
             </div>
             <div className="bg-white/10 rounded-3xl p-8 backdrop-blur-md border border-white/20 shadow-xl shadow-fuchsia-500/10">
               <div className="text-5xl md:text-6xl font-bold text-white leading-tight">

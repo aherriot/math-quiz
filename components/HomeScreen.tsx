@@ -108,8 +108,8 @@ export default function HomeScreen({
           </span>
           <span className="block text-xs text-white/50">
             {gameState.practiceAll
-              ? "Every fact is fair game — no new-fact cards"
-              : "Teach me new facts one at a time"}
+              ? "Ask me anything straight away"
+              : "Show me each new question before asking it"}
           </span>
         </span>
       </button>
@@ -170,7 +170,7 @@ export default function HomeScreen({
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-amber-400">{total}</div>
-          <div className="text-xs uppercase tracking-wide">Total</div>
+          <div className="text-xs uppercase tracking-wide">Questions</div>
         </div>
       </div>
 

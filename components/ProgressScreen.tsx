@@ -161,7 +161,7 @@ export default function ProgressScreen({ gameState, onBack, onReset }: Props) {
             <div className="text-2xl font-bold text-amber-400">
               {introduced}
             </div>
-            <div className="text-xs text-white/60">Introduced</div>
+            <div className="text-xs text-white/60">Started</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-fuchsia-400">
