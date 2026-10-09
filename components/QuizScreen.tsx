@@ -281,7 +281,7 @@ export default function QuizScreen({
                 = {correctAnswer}
               </div>
               <div className="text-white/50 text-base mt-4">
-                Remember this one!
+                {"You'll see this again soon!"}
               </div>
             </div>
             <button

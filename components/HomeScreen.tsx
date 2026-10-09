@@ -16,7 +16,7 @@ interface Props {
   onPlay: () => void;
   onProgress: () => void;
   onSelectMode: (mode: Mode) => void;
-  onTogglePracticeAll: () => void;
+  onSetPracticeAll: (practiceAll: boolean) => void;
 }
 
 export default function HomeScreen({
@@ -24,7 +24,7 @@ export default function HomeScreen({
   onPlay,
   onProgress,
   onSelectMode,
-  onTogglePracticeAll,
+  onSetPracticeAll,
 }: Props) {
   const level = getLevel(gameState.totalStars);
   const levelIndex = getLevelIndex(gameState.totalStars);
@@ -85,34 +85,48 @@ export default function HomeScreen({
         })}
       </div>
 
-      {/* Already-know-them-all switch */}
-      <button
-        onClick={onTogglePracticeAll}
-        role="switch"
-        aria-checked={gameState.practiceAll}
-        className="mt-3 w-full max-w-sm flex items-center gap-3 px-4 py-2.5 rounded-xl border border-white/15
-          bg-white/5 hover:bg-white/10 transition-all duration-200 cursor-pointer text-left"
-      >
-        <span
-          className={`shrink-0 w-11 h-6 rounded-full p-0.5 transition-colors duration-200
-            ${gameState.practiceAll ? "bg-emerald-500" : "bg-white/20"}`}
-        >
-          <span
-            className={`block w-5 h-5 rounded-full bg-white transition-transform duration-200
-              ${gameState.practiceAll ? "translate-x-5" : ""}`}
-          />
-        </span>
-        <span>
-          <span className="block text-sm font-bold text-white">
-            I already know these
-          </span>
-          <span className="block text-xs text-white/50">
-            {gameState.practiceAll
-              ? "Ask me anything straight away"
-              : "Show me each new question before asking it"}
-          </span>
-        </span>
-      </button>
+      {/* How to start: teach each question first, or go straight to asking. Both
+          choices are shown so neither behaviour has to be guessed at. */}
+      <div className="mt-3 grid grid-cols-2 gap-2 w-full max-w-sm">
+        {[
+          {
+            practiceAll: false,
+            emoji: "🎓",
+            label: "Teach me",
+            hint: "Show each new question first",
+          },
+          {
+            practiceAll: true,
+            emoji: "⚡",
+            label: "Quiz me",
+            hint: `Ask all ${total} questions now`,
+          },
+        ].map((choice) => {
+          const selected = gameState.practiceAll === choice.practiceAll;
+          return (
+            <button
+              key={choice.label}
+              onClick={() => onSetPracticeAll(choice.practiceAll)}
+              aria-pressed={selected}
+              className={`px-3 py-2.5 rounded-xl border text-left transition-all duration-200 cursor-pointer
+                ${
+                  selected
+                    ? "bg-gradient-to-b from-emerald-500/35 to-teal-500/25 border-emerald-400/60 shadow-lg shadow-emerald-500/20"
+                    : "bg-white/5 border-white/15 hover:bg-white/10"
+                }`}
+            >
+              <span
+                className={`block text-sm font-bold ${selected ? "text-white" : "text-white/60"}`}
+              >
+                {choice.emoji} {choice.label}
+              </span>
+              <span className="block text-[11px] text-white/50 leading-snug mt-0.5">
+                {choice.hint}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Level badge */}
       <div className="mt-5 flex flex-col items-center">
@@ -166,7 +180,7 @@ export default function HomeScreen({
           <div className="text-2xl font-bold text-fuchsia-400">
             {introduced}
           </div>
-          <div className="text-xs uppercase tracking-wide">Learning</div>
+          <div className="text-xs uppercase tracking-wide">In Progress</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-amber-400">{total}</div>

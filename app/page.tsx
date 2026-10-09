@@ -38,10 +38,8 @@ export default function Home() {
     setGameState((prev) => (prev ? { ...prev, mode } : prev));
   }, []);
 
-  const handleTogglePracticeAll = useCallback(() => {
-    setGameState((prev) =>
-      prev ? { ...prev, practiceAll: !prev.practiceAll } : prev,
-    );
+  const handleSetPracticeAll = useCallback((practiceAll: boolean) => {
+    setGameState((prev) => (prev ? { ...prev, practiceAll } : prev));
   }, []);
 
   if (!loaded || !gameState) {
@@ -65,7 +63,7 @@ export default function Home() {
           onPlay={() => setScreen("quiz")}
           onProgress={() => setScreen("progress")}
           onSelectMode={handleSelectMode}
-          onTogglePracticeAll={handleTogglePracticeAll}
+          onSetPracticeAll={handleSetPracticeAll}
         />
       )}
       {screen === "quiz" && (
